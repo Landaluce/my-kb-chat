@@ -1,0 +1,8 @@
+__pycache__
+.venv
+
+# Personal knowledge base — keep out of git
+kb/
+
+# Generated search index (contains kb content)
+output/
