@@ -99,6 +99,28 @@ function setResult(el, text, ok) {
     el.className = "result " + (ok ? "ok" : "err");
 }
 
+async function waitForReindex() {
+    setStatus("Reindexing…");
+    let done = false;
+    let lastError = null;
+    while (!done) {
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+            const res = await fetch("/api/reindex/status");
+            const data = await res.json();
+            if (!data.running) {
+                done = true;
+                lastError = data.error || null;
+            }
+        } catch {
+            // transient poll failure; keep waiting
+        }
+    }
+    setStatus("");
+    loadSourceCount();
+    return lastError;
+}
+
 async function submitNote(e) {
     e.preventDefault();
     const title = document.getElementById("note-title").value.trim();
@@ -110,8 +132,8 @@ async function submitNote(e) {
         return;
     }
     btn.disabled = true;
-    setResult(result, "Saving and reindexing…", true);
-    setStatus("Reindexing…");
+    setResult(result, "Saving…", true);
+    let savedPath;
     try {
         const res = await fetch("/api/ingest/note", {
             method: "POST",
@@ -120,16 +142,24 @@ async function submitNote(e) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Failed to save note");
-        setResult(result, `Saved → ${data.path}`, true);
-        document.getElementById("note-content").value = "";
-        document.getElementById("note-title").value = "";
+        savedPath = data.path;
     } catch (err) {
         setResult(result, err.message, false);
-    } finally {
         btn.disabled = false;
         setStatus("");
-        loadSourceCount();
+        return;
     }
+    const err = await waitForReindex();
+    setResult(
+        result,
+        err
+            ? `Saved → ${savedPath} (reindex error: ${err})`
+            : `Saved & indexed → ${savedPath}`,
+        !err,
+    );
+    document.getElementById("note-content").value = "";
+    document.getElementById("note-title").value = "";
+    btn.disabled = false;
 }
 
 async function submitUpload(e) {
@@ -143,8 +173,8 @@ async function submitUpload(e) {
         return;
     }
     btn.disabled = true;
-    setResult(result, "Converting, saving and reindexing…", true);
-    setStatus("Reindexing…");
+    setResult(result, "Converting & saving…", true);
+    let savedPath;
     try {
         const formData = new FormData();
         formData.append("file", file);
@@ -154,15 +184,23 @@ async function submitUpload(e) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Failed to upload");
-        setResult(result, `Converted & saved → ${data.path}`, true);
-        fileInput.value = "";
+        savedPath = data.path;
     } catch (err) {
         setResult(result, err.message, false);
-    } finally {
         btn.disabled = false;
         setStatus("");
-        loadSourceCount();
+        return;
     }
+    const err = await waitForReindex();
+    setResult(
+        result,
+        err
+            ? `Saved → ${savedPath} (reindex error: ${err})`
+            : `Converted, saved & indexed → ${savedPath}`,
+        !err,
+    );
+    fileInput.value = "";
+    btn.disabled = false;
 }
 
 form.addEventListener("submit", (e) => {

@@ -67,6 +67,11 @@ def sources():
     return {"files": kb_search.file_summaries()}
 
 
+@app.get("/api/reindex/status")
+def reindex_status():
+    return kb_search.reindex_status()
+
+
 class NoteRequest(BaseModel):
     title: str = ""
     content: str
@@ -81,7 +86,7 @@ def ingest_note(req: NoteRequest):
     path = _unique_path(NOTES_DIR, _slugify(title), ".md")
     body = f"# {title}\n\n{content}\n"
     path.write_text(body, encoding="utf-8")
-    kb_search.reindex()
+    kb_search.start_reindex()
     return {"path": str(path), "title": title}
 
 
@@ -108,7 +113,7 @@ async def ingest_upload(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="No text could be extracted from the file")
         dest = _unique_path(UPLOADS_DIR, _slugify(Path(name).stem or "upload"), ".md")
         dest.write_text(markdown, encoding="utf-8")
-    kb_search.reindex()
+    kb_search.start_reindex()
     return {"path": str(dest)}
 
 

@@ -122,3 +122,47 @@ def reindex() -> None:
     import index_kb
 
     index_kb.main()
+
+
+# --- Background reindex state ------------------------------------------
+import threading
+from datetime import datetime, timezone
+
+_reindex_lock = threading.Lock()
+_reindex_state = {
+    "running": False,
+    "finished_at": None,
+    "error": None,
+}
+
+
+def _run_bg():
+    global _reindex_state
+    with _reindex_lock:
+        _reindex_state["running"] = True
+        _reindex_state["error"] = None
+    try:
+        reindex()
+        err = None
+    except Exception as exc:  # noqa: BLE001
+        err = str(exc)
+    with _reindex_lock:
+        _reindex_state["running"] = False
+        _reindex_state["finished_at"] = datetime.now(timezone.utc).isoformat()
+        _reindex_state["error"] = err
+
+
+def start_reindex() -> None:
+    """Rebuild the index in a background thread if not already running."""
+    with _reindex_lock:
+        if _reindex_state["running"]:
+            return
+        _reindex_state["running"] = True
+        _reindex_state["finished_at"] = None
+        _reindex_state["error"] = None
+    threading.Thread(target=_run_bg, daemon=True).start()
+
+
+def reindex_status() -> dict:
+    with _reindex_lock:
+        return dict(_reindex_state)
