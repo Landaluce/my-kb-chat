@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KB Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>KB Chat</h1>
+            <span id="file-count" class="file-count"></span>
+        </header>
+        <main id="messages" class="messages"></main>
+        <form id="chat-form" class="chat-form" autocomplete="off">
+            <input
+                id="question"
+                type="text"
+                placeholder="Ask your knowledge base..."
+                aria-label="Question"
+            >
+            <button type="submit" id="send-btn">Send</button>
+        </form>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
