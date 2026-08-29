@@ -10,18 +10,50 @@
     <div class="app">
         <header class="header">
             <h1>KB Chat</h1>
-            <span id="file-count" class="file-count"></span>
+            <div class="file-count-wrap">
+                <span id="status" class="status"></span>
+                <span id="file-count" class="file-count"></span>
+            </div>
         </header>
-        <main id="messages" class="messages"></main>
-        <form id="chat-form" class="chat-form" autocomplete="off">
-            <input
-                id="question"
-                type="text"
-                placeholder="Ask your knowledge base..."
-                aria-label="Question"
-            >
-            <button type="submit" id="send-btn">Send</button>
-        </form>
+
+        <nav class="tabs">
+            <button id="tab-chat" class="tab active">Chat</button>
+            <button id="tab-note" class="tab">Add Note</button>
+            <button id="tab-upload" class="tab">Upload</button>
+        </nav>
+
+        <section id="pane-chat" class="pane chat-pane">
+            <main id="messages" class="messages"></main>
+            <form id="chat-form" class="chat-form" autocomplete="off">
+                <input
+                    id="question"
+                    type="text"
+                    placeholder="Ask your knowledge base..."
+                    aria-label="Question"
+                >
+                <button type="submit" id="send-btn">Send</button>
+            </form>
+        </section>
+
+        <section id="pane-note" class="pane note-pane hidden">
+            <form id="note-form" autocomplete="off">
+                <label for="note-title">Title</label>
+                <input id="note-title" type="text" placeholder="Note title (optional)">
+                <label for="note-content">Note / Fact</label>
+                <textarea id="note-content" rows="8" placeholder="Type your note or fact here..."></textarea>
+                <button type="submit" id="note-btn">Save Note (.md)</button>
+                <p id="note-result" class="result"></p>
+            </form>
+        </section>
+
+        <section id="pane-upload" class="pane upload-pane hidden">
+            <form id="upload-form">
+                <label for="upload-file">File (PDF, DOCX, TXT, MD)</label>
+                <input id="upload-file" type="file">
+                <button type="submit" id="upload-btn">Convert to .md</button>
+                <p id="upload-result" class="result"></p>
+            </form>
+        </section>
     </div>
     <script src="/static/app.js"></script>
 </body>

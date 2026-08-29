@@ -115,3 +115,10 @@ def file_summaries():
         {"path": path, "chunks": len(ids)}
         for path, ids in meta.get("files", {}).items()
     ]
+
+
+def reindex() -> None:
+    """Rebuild the full index from existing kb/ files (blocking)."""
+    import index_kb
+
+    index_kb.main()
