@@ -39,8 +39,25 @@ def _unique_path(directory: Path, stem: str, suffix: str) -> Path:
         n += 1
     return path
 
-app = FastAPI(title="KB Chat")
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+def _resolve_kb_path(rel_path: str) -> Path:
+    """Resolve and validate a path is a .md file inside kb/."""
+    candidate = (KB_DIR / rel_path).resolve()
+    try:
+        candidate.relative_to(KB_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Path is outside the KB")
+    if candidate.suffix.lower() != ".md":
+        raise HTTPException(status_code=400, detail="Only .md files are readable")
+    return candidate
+
+
+def _to_rel(abs_path: str) -> str:
+    """Turn an absolute kb path into a KB-relative path for /api/file."""
+    try:
+        return Path(abs_path).resolve().relative_to(KB_DIR.resolve()).as_posix()
+    except ValueError:
+        return abs_path
 
 
 class ChatRequest(BaseModel):
@@ -70,6 +87,29 @@ def sources():
 @app.get("/api/reindex/status")
 def reindex_status():
     return kb_search.reindex_status()
+
+
+class FileUpdate(BaseModel):
+    content: str
+
+
+@app.get("/api/file")
+def read_file(path: str):
+    target = _resolve_kb_path(path)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    content = target.read_text(encoding="utf-8", errors="ignore")
+    return {"path": str(target), "content": content}
+
+
+@app.put("/api/file")
+def update_file(path: str, req: FileUpdate):
+    target = _resolve_kb_path(path)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    target.write_text(req.content, encoding="utf-8")
+    kb_search.start_reindex()
+    return {"path": str(target)}
 
 
 class NoteRequest(BaseModel):
@@ -130,7 +170,12 @@ def chat(req: ChatRequest):
     return {
         "answer": text,
         "sources": [
-            {"path": r["path"], "score": r["score"], "preview": r["text"][:200]}
+            {
+                "path": r["path"],
+                "rel_path": _to_rel(r["path"]),
+                "score": r["score"],
+                "preview": r["text"][:200],
+            }
             for r in results
         ],
         "latency_ms": int((time.time() - start) * 1000),

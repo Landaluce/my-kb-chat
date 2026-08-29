@@ -42,11 +42,83 @@ function addMeta(el, sources, latency) {
     count.textContent = `Sources (${sources.length}) · ${latency} ms`;
     meta.appendChild(count);
     for (const s of sources) {
-        const span = document.createElement("span");
-        span.textContent = `• ${s.path} (score ${s.score.toFixed(3)})`;
-        meta.appendChild(span);
+        const btn = document.createElement("button");
+        btn.className = "source-link";
+        btn.type = "button";
+        btn.title = "Read / edit " + s.path;
+        btn.textContent = `• ${s.path} (score ${s.score.toFixed(3)})`;
+        btn.addEventListener("click", () => openFile(s.rel_path || s.path, s.preview));
+        meta.appendChild(btn);
     }
     el.appendChild(meta);
+}
+
+async function openFile(relPath, preview) {
+    const pathEl = document.getElementById("file-path");
+    const previewEl = document.getElementById("file-preview");
+    const textEl = document.getElementById("file-content");
+    const saveBtn = document.getElementById("file-save-btn");
+    const msgEl = document.getElementById("file-msg");
+    pathEl.textContent = relPath;
+    previewEl.hidden = false;
+    previewEl.textContent = preview || "";
+    textEl.value = "Loading…";
+    msgEl.textContent = "";
+    openModal();
+    try {
+        const res = await fetch("/api/file?path=" + encodeURIComponent(relPath));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Failed to load file");
+        textEl.value = data.content;
+        if (preview) {
+            previewEl.textContent = `chunk: ${preview}`;
+        }
+        saveBtn.disabled = false;
+    } catch (err) {
+        previewEl.hidden = true;
+        textEl.value = "";
+        msgEl.textContent = err.message;
+        msgEl.className = "file-msg err";
+        saveBtn.disabled = true;
+    }
+}
+
+async function saveFile() {
+    const relPath = document.getElementById("file-path").textContent.trim();
+    const text = document.getElementById("file-content").value;
+    const saveBtn = document.getElementById("file-save-btn");
+    const msgEl = document.getElementById("file-msg");
+    if (!relPath || !text) return;
+    saveBtn.disabled = true;
+    msgEl.textContent = "Saving…";
+    msgEl.className = "file-msg";
+    try {
+        const res = await fetch("/api/file?path=" + encodeURIComponent(relPath), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: text }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Failed to save");
+        msgEl.textContent = "Saved. Reindexing…";
+        msgEl.className = "file-msg ok";
+        const err = await waitForReindex();
+        msgEl.textContent = err ? `Saved (reindex error: ${err})` : "Saved & indexed.";
+        msgEl.className = "file-msg " + (err ? "err" : "ok");
+    } catch (err) {
+        msgEl.textContent = err.message;
+        msgEl.className = "file-msg err";
+    } finally {
+        saveBtn.disabled = false;
+    }
+}
+
+function openModal() {
+    document.getElementById("file-modal").classList.add("open");
+}
+
+function closeModal() {
+    document.getElementById("file-modal").classList.remove("open");
 }
 
 async function ask(question) {
@@ -216,6 +288,12 @@ tabs.upload.addEventListener("click", () => switchTab("upload"));
 
 document.getElementById("note-form").addEventListener("submit", submitNote);
 document.getElementById("upload-form").addEventListener("submit", submitUpload);
+
+document.getElementById("file-close-btn").addEventListener("click", closeModal);
+document.getElementById("file-save-btn").addEventListener("click", saveFile);
+document.getElementById("file-modal").addEventListener("click", (e) => {
+    if (e.target.id === "file-modal") closeModal();
+});
 
 loadSourceCount();
 input.focus();

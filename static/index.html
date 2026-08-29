@@ -55,6 +55,21 @@
             </form>
         </section>
     </div>
+
+    <div id="file-modal" class="modal">
+        <div class="modal-box">
+            <header class="modal-head">
+                <h2 id="file-path" class="modal-title"></h2>
+                <button id="file-close-btn" class="modal-close" aria-label="Close">&times;</button>
+            </header>
+            <pre id="file-preview" class="file-preview" hidden></pre>
+            <textarea id="file-content" class="file-content" spellcheck="false"></textarea>
+            <footer class="modal-foot">
+                <span id="file-msg" class="file-msg"></span>
+                <button id="file-save-btn" class="save-btn">Save &amp; Reindex</button>
+            </footer>
+        </div>
+    </div>
     <script src="/static/app.js"></script>
 </body>
 </html>
