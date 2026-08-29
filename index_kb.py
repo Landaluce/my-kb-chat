@@ -33,14 +33,20 @@ def embed(text: str):
 
 def main():
     items = []
+    meta = {"files": {}, "next_id": 0}
     for path in KB_DIR.rglob("*.md"):
         text = read_text(path)
+        file_ids = []
         for idx, chunk in enumerate(chunk_text(text)):
+            cid = meta["next_id"]
+            meta["next_id"] += 1
+            file_ids.append(cid)
             items.append({
                 "path": str(path),
-                "chunk_id": idx,
+                "chunk_id": cid,
                 "text": chunk
             })
+        meta["files"][str(path)] = file_ids
 
     vectors = np.array([embed(x["text"]) for x in items], dtype="float32")
     dim = vectors.shape[1]
@@ -51,6 +57,7 @@ def main():
 
     faiss.write_index(index, str(OUT_DIR / "kb_index.faiss"))
     (OUT_DIR / "kb_chunks.json").write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT_DIR / "kb_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
 if __name__ == "__main__":
     main()
