@@ -20,8 +20,8 @@ INDEX_PATH = OUT_DIR / 'kb_index.faiss'
 META_PATH = OUT_DIR / 'kb_meta.json'
 CHUNKS_PATH = OUT_DIR / 'kb_chunks.json'
 EMBED_MODEL = 'nomic-embed-text'
-CHUNK_SIZE = 1200
-CHUNK_OVERLAP = 200
+
+from kb_search import chunk_text, read_text
 
 lock = Lock()
 
@@ -30,25 +30,6 @@ class ChunkRecord:
     chunk_id: int
     path: str
     text: str
-
-
-def read_text(path: Path) -> str:
-    return path.read_text(encoding='utf-8', errors='ignore')
-
-
-def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP):
-    text = '\n'.join(line.rstrip() for line in text.splitlines()).strip()
-    if not text:
-        return []
-    out = []
-    i = 0
-    step = max(1, size - overlap)
-    while i < len(text):
-        chunk = text[i:i + size].strip()
-        if chunk:
-            out.append(chunk)
-        i += step
-    return out
 
 
 def embed_texts(texts):

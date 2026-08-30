@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KB Chat</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,17 +14,30 @@
             <div class="file-count-wrap">
                 <span id="status" class="status"></span>
                 <span id="file-count" class="file-count"></span>
+                <div class="header-actions">
+                    <button id="clear-btn" class="header-btn" type="button" title="Clear conversation">Clear</button>
+                    <button id="reindex-btn" class="header-btn" type="button">Reindex</button>
+                </div>
             </div>
         </header>
 
         <nav class="tabs">
             <button id="tab-chat" class="tab active">Chat</button>
+            <button id="tab-files" class="tab">Files</button>
             <button id="tab-note" class="tab">Add Note</button>
             <button id="tab-upload" class="tab">Upload</button>
         </nav>
 
         <section id="pane-chat" class="pane chat-pane">
-            <main id="messages" class="messages"></main>
+            <main id="messages" class="messages">
+                <div id="empty-state" class="empty-state">
+                    <p class="empty-title">Ask your knowledge base anything</p>
+                    <div class="empty-hints">
+                        <button type="button" class="hint-btn">Summarize my GC study files</button>
+                        <button type="button" class="hint-btn">What do my notes say about Pyramix?</button>
+                    </div>
+                </div>
+            </main>
             <form id="chat-form" class="chat-form" autocomplete="off">
                 <input
                     id="question"
@@ -33,6 +47,14 @@
                 >
                 <button type="submit" id="send-btn">Send</button>
             </form>
+        </section>
+
+        <section id="pane-files" class="pane files-pane hidden">
+            <div class="files-toolbar">
+                <input id="files-search" type="text" placeholder="Search files…" aria-label="Search files">
+                <button id="files-refresh" class="files-refresh" type="button">Refresh</button>
+            </div>
+            <ul id="files-list" class="files-list"></ul>
         </section>
 
         <section id="pane-note" class="pane note-pane hidden">
@@ -48,10 +70,15 @@
 
         <section id="pane-upload" class="pane upload-pane hidden">
             <form id="upload-form">
-                <label for="upload-file">File (PDF, DOCX, TXT, MD)</label>
+                <label for="upload-file">File (PDF, DOCX, TXT, MD) — or drop it here</label>
                 <input id="upload-file" type="file">
-                <button type="submit" id="upload-btn">Convert to .md</button>
+                <button type="submit" id="upload-btn">Convert &amp; Preview</button>
                 <p id="upload-result" class="result"></p>
+                <div id="upload-preview" class="upload-preview" hidden>
+                    <p id="upload-preview-title" class="upload-preview-title"></p>
+                    <pre id="upload-preview-content" class="upload-preview-content"></pre>
+                    <button type="button" id="upload-save-btn" class="save-btn">Save to KB</button>
+                </div>
             </form>
         </section>
     </div>
@@ -66,10 +93,14 @@
             <textarea id="file-content" class="file-content" spellcheck="false"></textarea>
             <footer class="modal-foot">
                 <span id="file-msg" class="file-msg"></span>
-                <button id="file-save-btn" class="save-btn">Save &amp; Reindex</button>
+                <div class="modal-actions">
+                    <button id="file-delete-btn" class="delete-btn">Delete</button>
+                    <button id="file-save-btn" class="save-btn">Save &amp; Reindex</button>
+                </div>
             </footer>
         </div>
     </div>
+    <script src="/static/render.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>

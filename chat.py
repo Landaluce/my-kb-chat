@@ -16,7 +16,7 @@ def run_cli():
     session = PromptSession()
     while True:
         q = session.prompt("Ask> ").strip()
-        if q in {"exit", "quit", "q", "bye ", "ex"}:
+        if q in {"exit", "quit", "q", "bye", "ex"}:
             break
         if q in {"/help", "/?", "/h"}:
             console.print("Commands: /help, /sources, /reindex, exit")
